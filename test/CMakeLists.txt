@@ -1,5 +1,6 @@
 if(BUILD_TESTS)
   add_subdirectory(test-input)
+  add_subdirectory(transform-vectors)
 
   if(OS_WINDOWS)
     add_subdirectory(win)
