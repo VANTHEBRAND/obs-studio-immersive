@@ -604,6 +604,8 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	uint32_t height;
 	uint32_t cx;
 	uint32_t cy;
+	int cx_signed;
+	int cy_signed;
 	struct vec2 base_origin;
 	struct vec2 origin;
 	struct vec2 scale;
@@ -647,12 +649,20 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 
 	if (item->bounds_type != OBS_BOUNDS_NONE) {
 		calculate_bounds_data(item, &origin, &scale, &cx, &cy);
+		cx_signed = (int)cx;
+		cy_signed = (int)cy;
 	} else {
-		cx = (uint32_t)((float)cx * scale.x);
-		cy = (uint32_t)((float)cy * scale.y);
+		/* A flipped item has a negative scale, so the scaled size is
+		 * negative too and the alignment offset must be negative to
+		 * match.  Convert straight to a signed int: converting a
+		 * negative float to uint32_t is undefined behavior and
+		 * saturates to 0 on arm64, which would place the origin as
+		 * if the item were left/top aligned. */
+		cx_signed = (int)((float)cx * scale.x);
+		cy_signed = (int)((float)cy * scale.y);
 	}
 
-	add_alignment(&origin, item->align, (int)cx, (int)cy);
+	add_alignment(&origin, item->align, cx_signed, cy_signed);
 
 	matrix4_identity(&item->draw_transform);
 	matrix4_scale3f(&item->draw_transform, &item->draw_transform, scale.x, scale.y, 1.0f);
